@@ -54,7 +54,6 @@ Result files created by segment.py:
 |segmentation_plot.(html,svg)|A line plot where the x axis represents the frames and the y represents <img src="https://latex.codecogs.com/gif.latex?M_t" /> |
 
 ## Example result
-![Alt text](log/segmentation_plot.svg)
 <img src="log/segmentation_plot.svg">
 
 # References
