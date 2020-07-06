@@ -1,42 +1,34 @@
-def segment(observations):
-    """ Segment a sequence of observations.
+import numpy as np
+from tqdm import tqdm
+import logging
+from src.camera_motion import estimate_z_transition
 
-    Given a sequence of observations extract the start and end index of consecutive observations.
-
-    Example:
-    --------
-    >>> observations = [1,1,1,2,2,2,1,1,4,4,4]
-    >>> segments = segment(observations)
-    >>> print(segmetns)
-    result:
-    >>> segments = {'1':[[0,2],[6,7]],
-    >>>             '2':[[3,5]],
-    >>>             '4':[8,10]}
-
-    Parameters
-    ----------
-    observations: list,
-        A list of observations.
-
-    Returns
-    -------
-        A dictionary where each key represents a unique type of observations and the values
-        are a list of [start, end] style list representing the satrt end end frame of a segment with
-        the belonging observation.
-
-    """
-    segmetns = {}
-    p_o = observations[0]
-    segmetns[p_o] = [[0]]
-    for i, o in enumerate(observations):
-        if p_o != o:
-            segmetns[p_o][-1].append(i-1)
-            if o not in segmetns.keys():
-                segmetns[o] = []
-            segmetns[o].append([i])
-            p_o = o
-
-    segmetns[p_o][-1].append(i)
-    return segmetns
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
 
 
+def segment_motion(optical_flow, threshold):
+    origins = optical_flow[0]
+    displacements = optical_flow[1]
+    cumulated = None
+    for origin, displacement in tqdm(zip(origins, displacements), desc="Segmenting", unit="frame"):
+        if cumulated is None:
+            cumulated = displacement-origin
+        else:
+            cumulated += displacement-origin
+        magnitudes = np.sqrt(np.sum(np.power(cumulated, 2), axis=2))
+        mean_magnitude = np.mean(magnitudes)
+        if mean_magnitude > threshold:
+            cumulated = None
+        yield mean_magnitude > threshold
+    pass
+
+
+def segment_transition(optical_flow, threshold, smooth_factor=0.99):
+    origins = optical_flow[0]
+    displacements = optical_flow[1]
+    smoothed_displacement = displacements[0]
+    for origin, displacement in tqdm(zip(origins, displacements), desc="Segmenting", unit="frame"):
+        smoothed_displacement = smooth_factor * smoothed_displacement + (1 - smooth_factor) * displacement
+        z_transition = estimate_z_transition(origin, smoothed_displacement)
+        yield z_transition > threshold
+    pass

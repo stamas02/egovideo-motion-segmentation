@@ -74,7 +74,6 @@ def segment(video, output_dir, grid_size, threshold):
         out_frame = cv2.putText(out_frame, str(mean_magnitude), (10, 20), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
         writer.write(out_frame)
     writer.release()
-    segmentation.to_pickle(os.path.join(output_dir, "segmentation.pickle"))
     logging.info("Segment Done!")
     render_report(os.path.join(output_dir, "segmentation.pickle"), output_dir)
 

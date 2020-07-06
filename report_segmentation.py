@@ -3,7 +3,6 @@ import logging
 import pickle
 import src.visualize as visualize
 import os
-from src.segmnet import segment
 import numpy as np
 import pandas
 
@@ -17,8 +16,9 @@ def parseargs():
     return args
 
 def render_report(segmentation_file, output_dir):
-    classification = pickle.load(open(segmentation_file, "rb"))
-    segments = segment(classification["Class"])
+    segmentation = pickle.load(open(segmentation_file, "rb"))
+
+
     stationary = np.array(segments["stationary"])[:,1] - np.array(segments["stationary"])[:,0]
     moving = np.array(segments["moving"])[:,1] - np.array(segments["moving"])[:,0]
     df = pandas.DataFrame(data={"Longest stationary segment length": np.max(stationary),
