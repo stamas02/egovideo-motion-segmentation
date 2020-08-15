@@ -4,7 +4,7 @@ import pickle
 import src.visualize as visualize
 import os
 import numpy as np
-import pandas
+import pandas as pd
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
 
@@ -17,20 +17,23 @@ def parseargs():
 
 def render_report(segmentation_file, output_dir):
     segmentation = pickle.load(open(segmentation_file, "rb"))
+    segmentation['Length'] = segmentation.apply(lambda x: x['End frame'] - x['Start frame'], axis=1)
 
+    gpd_segmentation = segmentation.groupby("Type")
 
-    stationary = np.array(segments["stationary"])[:,1] - np.array(segments["stationary"])[:,0]
-    moving = np.array(segments["moving"])[:,1] - np.array(segments["moving"])[:,0]
-    df = pandas.DataFrame(data={"Longest stationary segment length": np.max(stationary),
-                                "Shortest stationary segment length": np.min(stationary),
-                                "Average stationary segment length": np.mean(stationary),
-                                "Longest moving segment length": np.max(moving),
-                                "Shortest moving segment length": np.min(moving),
-                                "Average moving segment length": np.mean(moving),
+    df = pd.DataFrame(data={"Longest stationary segment length": gpd_segmentation.max()["Length"]["visit"],
+                                "Shortest stationary segment length": gpd_segmentation.min()["Length"]["visit"],
+                                "Average stationary segment length": gpd_segmentation.mean()["Length"]["visit"],
+                                "Longest moving segment length": gpd_segmentation.max()["Length"]["transition"],
+                                "Shortest moving segment length": gpd_segmentation.min()["Length"]["transition"],
+                                "Average moving segment length":gpd_segmentation.mean()["Length"]["transition"],
                                 }, index=[0])
 
     df.to_csv(os.path.join(output_dir, "segmentation_stat.csv"))
-    visualize.render_line(classification, "Frame", "Magnitude", "Name", os.path.join(output_dir, "segmentation_plot"))
+    x = [[0]*l if t == "visit" else [1]*l for l, t in zip(segmentation['Length'], segmentation['Type'])]
+    x = [x2 for x1 in x for x2 in x1]
+    df = pd.DataFrame(data={"x": x, "y": range(len(x))})
+    visualize.plot(df, "y", "x", save_to= output_dir+"segmentation.svg")
 
 
 if __name__ == "__main__":

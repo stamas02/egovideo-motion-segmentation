@@ -1,11 +1,31 @@
 import cv2
-
+from abc import ABC, abstractmethod
 from src.video import get_video_info, prettify_video_info
+from os import listdir
+from os.path import isfile, join
 
 
 class FrameGenerator:
     def __init__(
-        self, video_source, show_video_info=True, every_nth_frame=1, use_rgb=True
+            self, source, frame_count, resolution, every_nth_frame=1, use_rgb=True
+    ):
+        self._frame_count = frame_count
+        self.use_rgb = use_rgb
+        self.every_nth_frame = every_nth_frame
+        self.resolution = resolution
+        self.source = source
+
+    @abstractmethod
+    def __iter__(self):
+        pass
+
+    def __len__(self):
+        return self._frame_count // self.every_nth_frame
+
+
+class FrameGeneratorVideo(FrameGenerator):
+    def __init__(
+            self, video_source, show_video_info=True, every_nth_frame=1, use_rgb=True
     ):
         """
         Init
@@ -34,15 +54,16 @@ class FrameGenerator:
                     video_source, frame_count, fps, length, height, width
                 )
             )
-        self._frame_count = frame_count
         self.fps = fps
         self.length = length
-        self.resolution = (height, width)
         self._cap = cv2.VideoCapture(video_file)
-        self._every_nth_frame = every_nth_frame
-        self.use_rgb = use_rgb
         if not self._cap.isOpened():
             raise ValueError("could not open video file: {0}".format(video_file))
+        super().__init__(source=video_source,
+                         frame_count=frame_count,
+                         resolution=(width, height),
+                         every_nth_frame=every_nth_frame,
+                         use_rgb=use_rgb)
 
     def __iter__(self):
         """ Read frame from an opencv capture objects and yields
@@ -56,7 +77,7 @@ class FrameGenerator:
         while self._cap.isOpened():
             ret, frame = self._cap.read()
             cnt += 1
-            if cnt % self._every_nth_frame != 0:
+            if cnt % self.every_nth_frame != 0:
                 continue
             if frame is None:
                 return
@@ -66,5 +87,34 @@ class FrameGenerator:
         self._cap.release()
         raise StopIteration()
 
-    def __len__(self):
-        return self._frame_count // self._every_nth_frame
+
+class FrameGeneratorImageSequence(FrameGenerator):
+    def __init__(
+            self, video_source, every_nth_frame=1, use_rgb=True
+    ):
+
+        self._video_files = [f for f in listdir(video_source) if isfile(join(video_source, f))]
+        self._video_files.sort()
+        sample_img = cv2.imread(self._video_files[0])
+
+        super().__init__(source=video_source,
+                         frame_count=len(self._video_files),
+                         resolution=sample_img.shape[:2],
+                         every_nth_frame=every_nth_frame,
+                         use_rgb=use_rgb)
+
+    def __iter__(self):
+        """ Read frame from an opencv capture objects and yields
+        until this object is not closed.
+
+        Returns
+        -------
+        a nupy array representing an RGB frame
+        """
+        for img_file in self.self._video_files[0::self.every_nth_frame]:
+            frame = cv2.imread()
+            if self.use_rgb:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            yield frame
+        raise StopIteration()

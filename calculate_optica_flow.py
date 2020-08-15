@@ -4,7 +4,7 @@ import argparse
 from tqdm import tqdm
 import textwrap
 from src.video import get_video_info
-from src.frame_generator import FrameGenerator
+from src.frame_generator import FrameGeneratorVideo, FrameGeneratorImageSequence
 from src.grid_optical_flow import get_grid_flow, get_grid_centres
 import logging
 import cv2
@@ -29,14 +29,20 @@ def parseargs():
         type=int,
         help="A touple representing the nrows and ncols of the grid.",
     )
+    parser.add_argument("--video_type", type=str, default="video", choices=["video", "image_sequence"],
+                        help="Folder where the segmentation and plots are saved")
 
     args = parser.parse_args()
     return args
 
 
-def calculate_optical_flow(video, grid_size, output_dir):
+def calculate_optical_flow(video,video_type, grid_size, output_dir):
     _, _, fps, _, h, w = get_video_info(video)
-    fg = FrameGenerator(video, show_video_info=True, use_rgb=False)
+
+    if video_type == "video":
+        fg = FrameGeneratorVideo(video, show_video_info=True, use_rgb=False)
+    elif video_type == "image_sequence":
+        fg = FrameGeneratorImageSequence(video, use_rgb=False)
 
     # get the first frame
     frame_iterator = iter(fg)
