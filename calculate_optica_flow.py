@@ -37,7 +37,6 @@ def parseargs():
 
 
 def calculate_optical_flow(video,video_type, grid_size, output_dir):
-    _, _, fps, _, h, w = get_video_info(video)
 
     if video_type == "video":
         fg = FrameGeneratorVideo(video, show_video_info=True, use_rgb=False)

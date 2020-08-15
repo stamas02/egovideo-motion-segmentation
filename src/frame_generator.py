@@ -93,13 +93,13 @@ class FrameGeneratorImageSequence(FrameGenerator):
             self, video_source, every_nth_frame=1, use_rgb=True
     ):
 
-        self._video_files = [f for f in listdir(video_source) if isfile(join(video_source, f))]
+        self._video_files = [join(video_source, f) for f in listdir(video_source) if isfile(join(video_source, f))]
         self._video_files.sort()
         sample_img = cv2.imread(self._video_files[0])
 
         super().__init__(source=video_source,
                          frame_count=len(self._video_files),
-                         resolution=sample_img.shape[:2],
+                         resolution=sample_img.shape[1::-1],
                          every_nth_frame=every_nth_frame,
                          use_rgb=use_rgb)
 
@@ -111,8 +111,8 @@ class FrameGeneratorImageSequence(FrameGenerator):
         -------
         a nupy array representing an RGB frame
         """
-        for img_file in self.self._video_files[0::self.every_nth_frame]:
-            frame = cv2.imread()
+        for img_file in self._video_files[0::self.every_nth_frame]:
+            frame = cv2.imread(img_file)
             if self.use_rgb:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
