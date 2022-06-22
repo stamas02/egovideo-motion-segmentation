@@ -14,7 +14,7 @@ Jinja2==2.11.2
 lockfile==0.12.2
 MarkupSafe==1.1.1
 msgpack==0.6.2
-numpy==1.19.0
+numpy==1.22.0
 opencv-python==4.2.0.34
 packaging==20.3
 pandas==1.0.5
